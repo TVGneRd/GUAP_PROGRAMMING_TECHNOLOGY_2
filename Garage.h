@@ -92,7 +92,6 @@ public:
 			while (getline(in, line))
 			{
 				string str = line;
-				str.erase(std::remove(str.begin(), str.end(), '\n'), str.cend()); // Удаляем \n
 
 				lines[(lineNum++) % 7] = str; 
 				
