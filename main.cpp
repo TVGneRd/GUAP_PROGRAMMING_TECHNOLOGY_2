@@ -4,21 +4,21 @@
 #include <windows.h>
 
 #include "utils.cpp"
-#include "Garage.h"
-#include "Car.h"
-#include "Motorcycle.h"
-#include "Bus.h"
+#include "Keeper.h"
+#include "Note.h"
 
 using namespace std;
 
-Garage garage;
+Keeper keeper;
 
 int selectTransport(string status) {
 
-	string *commands = new string[garage.getSize()];
+	string *commands = new string[keeper.getSize()];
 
-	for (size_t i = 0; i < garage.getSize(); i++) {
-		commands[i] = garage.getList()[i]->getInfo();
+	keeper.printHead();
+
+	for (size_t i = 0; i < keeper.getSize(); i++) {
+		commands[i] = keeper.getList()[i]->toString();
 	}
 
 	int activeLine = 0;
@@ -29,10 +29,13 @@ int selectTransport(string status) {
 
 		cout << status << endl;
 
-		for (size_t i = 0; i < garage.getSize(); i++)
+		keeper.sort();
+
+		for (size_t i = 0; i < keeper.getSize(); i++)
 		{
-			cout << garage.getList()[i]->getInfo(activeLine == i);
-			cout << endl;
+			if (activeLine == i) cout << "\033[36m";
+			cout << keeper.getList()[i]->toString();
+			cout << "\033[0m" << endl;
 		}
 
 		int command = _getch();
@@ -41,11 +44,11 @@ int selectTransport(string status) {
 		switch (command)
 		{
 		case ARROW_DOWN:
-			activeLine = (activeLine >= garage.getSize() - 1) ? 0 : activeLine + 1;
+			activeLine = (activeLine >= keeper.getSize() - 1) ? 0 : activeLine + 1;
 			break;
 
 		case ARROW_UP:
-			activeLine = (activeLine == 0) ? garage.getSize() - 1 : activeLine - 1;
+			activeLine = (activeLine == 0) ? keeper.getSize() - 1 : activeLine - 1;
 			break;
 
 		case ARROW_LEFT:
@@ -66,11 +69,11 @@ int selectTransport(string status) {
 }
 
 bool check() {
-	if (!garage) return true; // используем перегрузку оператора !
+	if (!keeper) return true; // используем перегрузку оператора !
 
-	cout << "\033[34mГараж пуст!\033[0m" << endl;
+	cout << "\033[34mЗаметок еще нет\033[0m" << endl;
 	cout << endl << "\033[35mНажмите любую клавишу чтобы вернутся в меню\033[0m" << endl;
-	_getch();
+	cin.get();
 		
 	return false;
 }
@@ -78,40 +81,48 @@ bool check() {
 void showLoop() {
 	if (!check()) return;
 
-	for (size_t i = 0; i < garage.getSize(); i++) {
-		cout << garage.getList()[i]->getInfo() << endl;
+	keeper.sort();
+	keeper.printHead();
+
+	for (size_t i = 0; i < keeper.getSize(); i++) {
+		cout << keeper.getList()[i]->toString() << endl;
 	}
 
 	cout << endl << "\033[35mНажмите любую клавишу чтобы вернутся в меню\033[0m" << endl;
 
-	_getch();
+	cin.get();
 }
 
-void addLoop() {
+void searchLoop() {
+	if (!check()) return;
 
-	string commands[] = {
-		"Автомобиль",
-		"Мотоцикл",
-		"Автобус",
-	};
+	int counter = 0;
+	int mounth;
 
-	int command = menu("Выберите тип (< - назад):", commands, sizeof(commands) / sizeof(string));
+	cout << "Введите месяц: ";
+	cin >> mounth;
+	cin.get();
 
-	switch (command)
-	{
-	case 0:
-		garage.addTransport(new Car());
-		break;
-	case 1:
-		garage.addTransport(new Motorcycle());
-		break;
-	case 2:
-		garage.addTransport(new Bus());
-		break;
-	default:
-		return;
-		break;
+	keeper.sort();
+	keeper.printHead();
+
+	for (size_t i = 0; i < keeper.getSize(); i++) {
+		int currentMounth = keeper.getList()[i]->getBithday()[1];
+		if (currentMounth == mounth) {
+			cout << keeper.getList()[i]->toString() << endl;
+			counter++;
+		}
 	}
+
+	if (!counter) {
+		system("@cls||clear");
+		cout << endl << "\033[31mНичего не найдено =(\033[0m" << endl;
+
+	}
+
+	cout << endl << "\033[35mНажмите любую клавишу чтобы вернутся в меню\033[0m" << endl;
+
+	cin.get();
 }
 
 void editLoop() {
@@ -119,7 +130,7 @@ void editLoop() {
 
 	int number = selectTransport("Выберите объект (< - назад):");
 	if (number < 0) return;
-	garage.getList()[number]->edit();
+	keeper.getList()[number]->edit();
 }
 
 void removeLoop() {
@@ -127,7 +138,7 @@ void removeLoop() {
 
 	int number = selectTransport("Выберите объект (< - назад):");
 	if (number < 0) return;
-	garage.removeTransport(number);
+	keeper.removeNote(number);
 }
 
 int main()
@@ -137,17 +148,18 @@ int main()
 	SetConsoleOutputCP(1251);
 
 	string commands[] = {
-		"Показать транспорт",
-		"Добавить транспорт",
-		"Редактировать транспорт",
-		"Удалить транспорт",
+		"Показать заметки",
+		"Добавить заметку",
+		"Найти заметку",
+		"Редактировать заметку",
+		"Удалить заметку",
 		"\033[33mСохранить данные\033[0m",
 		"\033[32mЗагрузить данные\033[0m",
 		"\033[31mВыход\033[0m",
 	};
 
 	while (true) {
-		string status = string("В гараже: ") + to_string(garage.getSize()) + string(" единиц техники\nМеню:");
+		string status = string("У вас: ") + to_string(keeper.getSize()) + string(" заметок.\nМеню:");
 
 		int command = menu(status, commands, sizeof(commands) / sizeof(string));
 
@@ -159,23 +171,25 @@ int main()
 			break;
 
 		case 1:
-			addLoop();
+			keeper.addNote(new Note());
 			break;
-
 		case 2:
+			searchLoop();
+			break;
+		case 3:
 			editLoop();
 			break;
 
-		case 3:
+		case 4:
 			removeLoop();
 			break;
 
-		case 4:
-			if (!check()) continue;
-			garage.save();
-			break;
 		case 5:
-			garage.load();
+			if (!check()) continue;
+			keeper.save();
+			break;
+		case 6:
+			keeper.load();
 			break;
 		case -1:
 			break;

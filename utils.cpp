@@ -57,6 +57,11 @@ int menu(string status, string* commands, size_t commandsLength) {
 		case ENTER:
 			system("@cls||clear");
 			return activeLine;
+		default:
+			if (command > '0' && command <= commandsLength + '0') {
+				system("@cls||clear");
+				return command - '0' - 1;
+			}
 		}
 
 	}

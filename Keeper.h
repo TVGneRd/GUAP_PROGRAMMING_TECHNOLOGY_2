@@ -3,24 +3,21 @@
 #include <string>
 #include <fstream>
 #include <algorithm>
+#include <iomanip>
 
-#include "Transport.h"
-#include "Car.h"
-#include "Motorcycle.h"
-#include "Bus.h"
+#include "Note.h"
 
 using namespace std;
 
-class Garage
+class Keeper
 {
 public:
 
-
-	Garage() {
+	Keeper() {
 	}
 
-	void addTransport(Transport *transport) {
-		Transport **newList = new Transport*[listSize + 1];
+	void addNote(Note *transport) {
+		Note **newList = new Note*[listSize + 1];
 		
 		for (int i = 0; i < listSize; i++) {
 			newList[i] = list[i];
@@ -32,8 +29,8 @@ public:
 		list = newList;
 	}
 
-	void removeTransport(int number) {
-		Transport **newList = new Transport*[listSize - 1];
+	void removeNote(int number) {
+		Note **newList = new Note*[listSize - 1];
 
 		int index = 0;
 		for (int i = 0; i < listSize; i++) {
@@ -48,6 +45,23 @@ public:
 		listSize--;
 	}
 
+	void sort() {
+		Note* temp;
+
+		for (size_t i = 0; i < listSize - 1; i++)
+		{
+			for (size_t j = i + 1; j < listSize; j++)
+			{
+				int cmp = _stricmp(list[i]->getName().c_str(), list[j]->getName().c_str());
+				if (_stricmp(list[i]->getName().c_str(), list[j]->getName().c_str()) > 0) {
+					temp = list[i];
+					list[i] = list[j];
+					list[j] = temp;
+				}
+			}
+		}
+	}
+
 	void save() {
 		ofstream out;
 
@@ -56,7 +70,7 @@ public:
 		if (out.is_open())
 		{
 			for (size_t i = 0; i < listSize; i++) {
-				out << list[i]->serialize() << "\n";
+				out << *list[i];
 			}
 			cout << "Сохранено!";
 		} else {
@@ -67,7 +81,7 @@ public:
 		out.close();
 
 		cout << endl << "\033[35mНажмите любую клавишу чтобы вернутся в меню\033[0m" << endl;
-		_getch();
+		cin.get();
 	}
 	
 	void load() {
@@ -78,37 +92,36 @@ public:
 
 		try
 		{
+			const int strNums = 6;
+
 			if (!in.is_open()) throw std::runtime_error("Не удалось открыть файл.");
 
 			int numberOfLines = count(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>(), '\n'); // считаем количесвто строк в файле
-			if (numberOfLines <= 0 || numberOfLines % 7 != 0) throw std::runtime_error("Файл поврежден!");
+			if (numberOfLines <= 0 || numberOfLines % strNums != 0) throw std::runtime_error("Файл поврежден!");
 
 			in.seekg(0);
 
 			int lineNum = 0;
-			Transport **newList = new Transport*[(int) numberOfLines / 7];
-			string lines[7];
+			Note **newList = new Note*[(int) numberOfLines / strNums];
+			string lines[strNums];
 
 			while (getline(in, line))
 			{
 				string str = line;
 
-				lines[(lineNum++) % 7] = str; 
+				lines[(lineNum++) % strNums] = str;
 				
-				int pos = lineNum / 7 - 1;
+				int pos = lineNum / strNums - 1;
 
-				if (lineNum % 7 == 0) {
-					if (string("Car") == lines[0]) newList[pos] = new Car(lines);
-					else if (string("Bus") == lines[0]) newList[pos] = new Bus(lines);
-					else if (string("Motorcycle") == lines[0]) newList[pos] = new Motorcycle(lines);
-					else throw std::runtime_error("Не известный тип транспорта");
+				if (lineNum % strNums == 0) {
+					newList[pos] = new Note(lines);
 				}
 			}
 
 			delete[]list;
 
 			list = newList;
-			listSize = (int)numberOfLines / 7;
+			listSize = (int)numberOfLines / strNums;
 
 			cout << "Загружено!";
 		} 
@@ -124,11 +137,15 @@ public:
 		in.close(); 
 
 		cout << endl << "\033[35mНажмите любую клавишу чтобы вернутся в меню\033[0m" << endl;
-		_getch();
+		cin.get();
 
 	}
 
-	Transport** getList() {
+	void printHead() {
+		cout << "\033[47;30m" << setw(36) << "ФИО" << setw(30) << "Телефон" << setw(16) << "День рождения" << "\033[0m" << endl;
+	}
+
+	Note** getList() {
 		return list;
 	}
 
@@ -136,13 +153,13 @@ public:
 		return listSize;
 	}
 
-	friend const bool operator! (Garage& garage)
+	friend const bool operator! (Keeper& keeper)
 	{
-		return (bool) garage.getSize();
+		return (bool) keeper.getSize();
 	}
 
 private:
-	Transport** list = {};
+	Note** list = {};
 	size_t listSize = 0;
 };
 
